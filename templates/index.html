@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公钥密码算法交互系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            min-height: 80px;
+            font-family: monospace;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            word-break: break-all;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .algorithm-section {
+            border: 1px solid #eee;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            background-color: #f1f1f1;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            transition: 0.3s;
+            font-size: 16px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab-button:hover {
+            background-color: #ddd;
+        }
+        .tab-button.active {
+            background-color: #007BFF;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 5px 5px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .nav-links {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .nav-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #007BFF;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>公钥密码算法交互系统</h1>
+    
+    <div class="nav-links">
+        <a href="/">主页</a> | 
+        <a href="/performance">性能比较</a>
+    </div>
+    
+    <div class="tab-container">
+        <button class="tab-button active" onclick="openTab(event, 'rsa')">RSA 算法</button>
+        <button class="tab-button" onclick="openTab(event, 'elgamal')">ElGamal 算法</button>
+        <button class="tab-button" onclick="openTab(event, 'ecc')">ECC 算法</button>
+    </div>
+    
+    <div id="rsa" class="tab-content active">
+        <h2>RSA 算法</h2>
+        <div class="form-group">
+            <button onclick="generateRSAKeys()">生成 RSA 密钥对</button>
+            <div class="result" id="rsaKeys"></div>
+        </div>
+        <div class="form-group">
+            <label>明文：</label>
+            <textarea id="rsaPlaintext" placeholder="请输入要加密的明文"></textarea>
+            <label>公钥：</label>
+            <textarea id="rsaPublicKey" placeholder="请输入或生成公钥"></textarea>
+            <button onclick="rsaEncrypt()">公钥加密</button>
+            <div class="result" id="rsaCiphertext"></div>
+        </div>
+        <div class="form-group">
+            <label>密文：</label>
+            <textarea id="rsaDecryptCiphertext" placeholder="请输入要解密的密文"></textarea>
+            <label>私钥：</label>
+            <textarea id="rsaPrivateKey" placeholder="请输入私钥"></textarea>
+            <button onclick="rsaDecrypt()">私钥解密</button>
+            <div class="result" id="rsaDecryptedText"></div>
+        </div>
+        <div class="form-group">
+            <button onclick="rsaPerformanceTest()">性能测试</button>
+            <div class="result" id="rsaPerformance"></div>
+        </div>
+    </div>
+
+    <div id="elgamal" class="tab-content">
+        <h2>ElGamal 算法</h2>
+        <div class="form-group">
+            <button onclick="generateElGamalKeys()">生成 ElGamal 密钥对</button>
+            <div class="result" id="elGamalKeys"></div>
+        </div>
+        <div class="form-group">
+            <label>明文：</label>
+            <textarea id="elGamalPlaintext" placeholder="请输入要加密的明文"></textarea>
+            <label>公钥：</label>
+            <textarea id="elGamalPublicKey" placeholder="请输入或生成公钥"></textarea>
+            <button onclick="elGamalEncrypt()">公钥加密</button>
+            <div class="result" id="elGamalCiphertext"></div>
+        </div>
+        <div class="form-group">
+            <label>密文：</label>
+            <textarea id="elGamalDecryptCiphertext" placeholder="请输入要解密的密文"></textarea>
+            <label>私钥：</label>
+            <textarea id="elGamalPrivateKey" placeholder="请输入私钥"></textarea>
+            <button onclick="elGamalDecrypt()">私钥解密</button>
+            <div class="result" id="elGamalDecryptedText"></div>
+        </div>
+        <div class="form-group">
+            <button onclick="elGamalPerformanceTest()">性能测试</button>
+            <div class="result" id="elGamalPerformance"></div>
+        </div>
+    </div>
+
+    <div id="ecc" class="tab-content">
+        <h2>ECC 算法</h2>
+        <div class="form-group">
+            <button onclick="generateECCKeys()">生成 ECC 密钥对</button>
+            <div class="result" id="eccKeys"></div>
+        </div>
+        <div class="form-group">
+            <label>明文：</label>
+            <textarea id="eccPlaintext" placeholder="请输入要加密的明文"></textarea>
+            <label>公钥：</label>
+            <textarea id="eccPublicKey" placeholder="请输入或生成公钥"></textarea>
+            <button onclick="eccEncrypt()">公钥加密</button>
+            <div class="result" id="eccCiphertext"></div>
+        </div>
+        <div class="form-group">
+            <label>密文：</label>
+            <textarea id="eccDecryptCiphertext" placeholder="请输入要解密的密文"></textarea>
+            <label>私钥：</label>
+            <textarea id="eccPrivateKey" placeholder="请输入私钥"></textarea>
+            <button onclick="eccDecrypt()">私钥解密</button>
+            <div class="result" id="eccDecryptedText"></div>
+        </div>
+        <div class="form-group">
+            <button onclick="eccPerformanceTest()">性能测试</button>
+            <div class="result" id="eccPerformance"></div>
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, algorithmName) {
+            // 隐藏所有标签内容
+            var tabContents = document.getElementsByClassName("tab-content");
+            for (var i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            // 移除所有标签按钮的活动状态
+            var tabButtons = document.getElementsByClassName("tab-button");
+            for (var i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            
+            // 显示当前标签内容并设置按钮为活动状态
+            document.getElementById(algorithmName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+        
+        // 显示操作结果，带有格式化
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            if (isError) {
+                element.innerHTML = `<span style="color: red;">错误: ${data}</span>`;
+            } else {
+                if (typeof data === 'object') {
+                    element.innerText = JSON.stringify(data, null, 2);
+                } else {
+                    element.innerText = data;
+                }
+            }
+        }
+        
+        // RSA 相关函数
+        async function generateRSAKeys() {
+            try {
+                document.getElementById('rsaKeys').innerText = "生成中...";
+                const response = await fetch('/api/encryption/rsa/generate', { method: 'POST' });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.error) {
+                    showResult('rsaKeys', data.error, true);
+                } else {
+                    showResult('rsaKeys', data);
+                    document.getElementById('rsaPublicKey').value = data.public_key;
+                    document.getElementById('rsaPrivateKey').value = data.private_key;
+                }
+            } catch (error) {
+                showResult('rsaKeys', error.message, true);
+            }
+        }
+
+        async function rsaEncrypt() {
+            try {
+                const plaintext = document.getElementById('rsaPlaintext').value;
+                const publicKey = document.getElementById('rsaPublicKey').value;
+                
+                if (!plaintext || !publicKey) {
+                    showResult('rsaCiphertext', "请输入明文和公钥", true);
+                    return;
+                }
+                
+                document.getElementById('rsaCiphertext').innerText = "加密中...";
+                const response = await fetch('/api/encryption/rsa/encrypt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plaintext, public_key: publicKey })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    showResult('rsaCiphertext', data.error, true);
+                } else {
+                    showResult('rsaCiphertext', data.ciphertext);
+                    document.getElementById('rsaDecryptCiphertext').value = data.ciphertext;
+                }
+            } catch (error) {
+                showResult('rsaCiphertext', error.message, true);
+            }
+        }
+
+        async function rsaDecrypt() {
+            try {
+                const ciphertext = document.getElementById('rsaDecryptCiphertext').value;
+                const privateKey = document.getElementById('rsaPrivateKey').value;
+                
+                if (!ciphertext || !privateKey) {
+                    showResult('rsaDecryptedText', "请输入密文和私钥", true);
+                    return;
+                }
+                
+                document.getElementById('rsaDecryptedText').innerText = "解密中...";
+                const response = await fetch('/api/encryption/rsa/decrypt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ciphertext, private_key: privateKey })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    showResult('rsaDecryptedText', data.error, true);
+                } else {
+                    showResult('rsaDecryptedText', data.plaintext);
+                }
+            } catch (error) {
+                showResult('rsaDecryptedText', error.message, true);
+            }
+        }
+
+        async function rsaPerformanceTest() {
+            try {
+                document.getElementById('rsaPerformance').innerText = "测试中...";
+                const response = await fetch('/api/encryption/rsa/performance');
+                const data = await response.json();
+                if (data.error) {
+                    showResult('rsaPerformance', data.error, true);
+                } else {
+                    // 显示更详细的性能测试结果
+                    const formattedResults = {
+                        "密钥生成时间(毫秒)": (data.key_generation_time * 1000).toFixed(2),
+                        "加密时间(毫秒)": (data.encryption_time * 1000).toFixed(2),
+                        "解密时间(毫秒)": (data.decryption_time * 1000).toFixed(2),
+                        "签名时间(毫秒)": (data.signing_time * 1000).toFixed(2),
+                        "验证时间(毫秒)": (data.verification_time * 1000).toFixed(2),
+                        "密文大小(字节)": data.ciphertext_size,
+                        "签名大小(字节)": data.signature_size,
+                        "扩展因子": data.expansion_factor.toFixed(2),
+                        "安全级别": data.security_level
+                    };
+                    showResult('rsaPerformance', formattedResults);
+                }
+            } catch (error) {
+                showResult('rsaPerformance', error.message, true);
+            }
+        }
+
+        // ElGamal 相关函数
+        async function generateElGamalKeys() {
+            try {
+                document.getElementById('elGamalKeys').innerText = "生成中...";
+                const response = await fetch('/api/encryption/elgamal/generate', { method: 'POST' });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.error) {
+                    showResult('elGamalKeys', data.error, true);
+                } else {
+                    showResult('elGamalKeys', data);
+                    document.getElementById('elGamalPublicKey').value = data.public_key;
+                    document.getElementById('elGamalPrivateKey').value = data.private_key;
+                }
+            } catch (error) {
+                showResult('elGamalKeys', error.message, true);
+            }
+        }
+
+        async function elGamalEncrypt() {
+            try {
+                const plaintext = document.getElementById('elGamalPlaintext').value;
+                const publicKey = document.getElementById('elGamalPublicKey').value;
+                
+                if (!plaintext || !publicKey) {
+                    showResult('elGamalCiphertext', "请输入明文和公钥", true);
+                    return;
+                }
+                
+                document.getElementById('elGamalCiphertext').innerText = "加密中...";
+                const response = await fetch('/api/encryption/elgamal/encrypt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plaintext, public_key: publicKey })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    showResult('elGamalCiphertext', data.error, true);
+                } else {
+                    showResult('elGamalCiphertext', data.ciphertext);
+                    document.getElementById('elGamalDecryptCiphertext').value = data.ciphertext;
+                }
+            } catch (error) {
+                showResult('elGamalCiphertext', error.message, true);
+            }
+        }
+
+        async function elGamalDecrypt() {
+            try {
+                const ciphertext = document.getElementById('elGamalDecryptCiphertext').value;
+                const privateKey = document.getElementById('elGamalPrivateKey').value;
+                
+                if (!ciphertext || !privateKey) {
+                    showResult('elGamalDecryptedText', "请输入密文和私钥", true);
+                    return;
+                }
+                
+                document.getElementById('elGamalDecryptedText').innerText = "解密中...";
+                const response = await fetch('/api/encryption/elgamal/decrypt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ciphertext, private_key: privateKey })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    showResult('elGamalDecryptedText', data.error, true);
+                } else {
+                    showResult('elGamalDecryptedText', data.plaintext);
+                }
+            } catch (error) {
+                showResult('elGamalDecryptedText', error.message, true);
+            }
+        }
+
+        async function elGamalPerformanceTest() {
+            try {
+                document.getElementById('elGamalPerformance').innerText = "测试中...";
+                const response = await fetch('/api/encryption/elgamal/performance');
+                const data = await response.json();
+                if (data.error) {
+                    showResult('elGamalPerformance', data.error, true);
+                } else {
+                    // 显示更详细的性能测试结果
+                    const formattedResults = {
+                        "密钥生成时间(毫秒)": (data.key_generation_time * 1000).toFixed(2),
+                        "加密时间(毫秒)": (data.encryption_time * 1000).toFixed(2),
+                        "解密时间(毫秒)": (data.decryption_time * 1000).toFixed(2),
+                        "密文大小(字节)": data.ciphertext_size,
+                        "扩展因子": data.expansion_factor.toFixed(2),
+                        "位长度": data.bit_length || "未知"
+                    };
+                    showResult('elGamalPerformance', formattedResults);
+                }
+            } catch (error) {
+                showResult('elGamalPerformance', error.message, true);
+            }
+        }
+
+        // ECC 相关函数
+        async function generateECCKeys() {
+            try {
+                document.getElementById('eccKeys').innerText = "生成中...";
+                const response = await fetch('/api/encryption/ecc/generate_keys', { method: 'POST' });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.error) {
+                    showResult('eccKeys', data.error, true);
+                } else {
+                    showResult('eccKeys', data);
+                    document.getElementById('eccPublicKey').value = data.public_key;
+                    document.getElementById('eccPrivateKey').value = data.private_key;
+                }
+            } catch (error) {
+                showResult('eccKeys', error.message, true);
+            }
+        }
+
+        async function eccEncrypt() {
+            try {
+                const plaintext = document.getElementById('eccPlaintext').value;
+                const publicKey = document.getElementById('eccPublicKey').value;
+                
+                if (!plaintext || !publicKey) {
+                    showResult('eccCiphertext', "请输入明文和公钥", true);
+                    return;
+                }
+                
+                document.getElementById('eccCiphertext').innerText = "加密中...";
+                const response = await fetch('/api/encryption/ecc/encrypt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plaintext, public_key: publicKey })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    showResult('eccCiphertext', data.error, true);
+                } else {
+                    showResult('eccCiphertext', data.ciphertext);
+                    document.getElementById('eccDecryptCiphertext').value = data.ciphertext;
+                }
+            } catch (error) {
+                showResult('eccCiphertext', error.message, true);
+            }
+        }
+
+        async function eccDecrypt() {
+            try {
+                const ciphertext = document.getElementById('eccDecryptCiphertext').value;
+                const privateKey = document.getElementById('eccPrivateKey').value;
+                
+                if (!ciphertext || !privateKey) {
+                    showResult('eccDecryptedText', "请输入密文和私钥", true);
+                    return;
+                }
+                
+                document.getElementById('eccDecryptedText').innerText = "解密中...";
+                const response = await fetch('/api/encryption/ecc/decrypt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ciphertext, private_key: privateKey })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    showResult('eccDecryptedText', data.error, true);
+                } else {
+                    showResult('eccDecryptedText', data.plaintext);
+                }
+            } catch (error) {
+                showResult('eccDecryptedText', error.message, true);
+            }
+        }
+
+        async function eccPerformanceTest() {
+            try {
+                document.getElementById('eccPerformance').innerText = "测试中...";
+                const response = await fetch('/api/encryption/ecc/performance');
+                const data = await response.json();
+                if (data.error) {
+                    showResult('eccPerformance', data.error, true);
+                } else {
+                    // 显示更详细的性能测试结果
+                    const formattedResults = {
+                        "密钥生成时间(毫秒)": (data.key_generation_time * 1000).toFixed(2),
+                        "加密时间(毫秒)": (data.encryption_time * 1000).toFixed(2),
+                        "解密时间(毫秒)": (data.decryption_time * 1000).toFixed(2),
+                        "签名时间(毫秒)": (data.signing_time * 1000).toFixed(2),
+                        "验证时间(毫秒)": (data.verification_time * 1000).toFixed(2),
+                        "密文大小(字节)": data.ciphertext_size,
+                        "签名大小(字节)": data.signature_size,
+                        "扩展因子": data.expansion_factor.toFixed(2),
+                        "曲线": data.curve_name,
+                        "安全级别": data.security_level
+                    };
+                    showResult('eccPerformance', formattedResults);
+                }
+            } catch (error) {
+                showResult('eccPerformance', error.message, true);
+            }
+        }
+    </script>
+</body>
+</html>
