@@ -7,8 +7,9 @@ from algorithms.rsa import RSAEncryption
 from algorithms.elgamal import ElGamalEncryption
 from algorithms.ecc import ECCEncryption
 from cryptography.hazmat.primitives.asymmetric import ec
+import time
 
-router = APIRouter(prefix="/api/encryption")
+router = APIRouter(prefix="/api/encryption", tags=["Encryption API"])
 logger = logging.getLogger(__name__)
 
 # 请求模型
@@ -22,10 +23,30 @@ class DecryptRequest(BaseModel):
 
 class PerformanceTestRequest(BaseModel):
     message_size: int = 100
-    iterations: int = 5
+    iterations: int = 100
 
 class ECCGenerateRequest(BaseModel):
     curve_name: str = "SECP256R1"  # 默认使用P-256曲线
+
+class KeyGenerateResponse(BaseModel):
+    public_key: str
+    private_key: str
+
+class EncryptResponse(BaseModel):
+    ciphertext: str
+
+class DecryptResponse(BaseModel):
+    plaintext: str
+
+class PerformanceResponse(BaseModel):
+    key_generation_time: float
+    encryption_time: float
+    decryption_time: float
+    ciphertext_size: int
+    expansion_factor: float
+    security_level: str = None
+    curve_name: str = None # ECC特有
+    bit_length: int = None # ElGamal特有
 
 # 添加ECC曲线信息API
 @router.get('/ecc/curves')
@@ -173,136 +194,108 @@ def ecc_security_assessment(curve_name: str = "SECP256R1"):
         logger.error(f'ECC 安全性评估失败: {e}')
         return JSONResponse(content={'error': str(e)}, status_code=500)
 
-@router.post('/rsa/generate')
-def generate_rsa_keys():
+@router.post('/rsa/generate', response_model=KeyGenerateResponse)
+async def rsa_generate_keys_api():
+    """生成RSA密钥对"""
     try:
         rsa = RSAEncryption(2048)
         public_key, private_key = rsa.generate_keys()
-        logger.info('RSA 密钥生成成功')
-        return JSONResponse(content={
-            'public_key': public_key,
-            'private_key': private_key
-        })
+        return {"public_key": public_key, "private_key": private_key}
     except Exception as e:
-        logger.error(f'RSA 密钥生成失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+        logger.error(f"RSA 密钥生成失败: {e}")
+        raise HTTPException(status_code=500, detail=f"RSA 密钥生成失败: {str(e)}")
 
-@router.post('/elgamal/generate')
-def generate_elgamal_keys():
+@router.post('/elgamal/generate', response_model=KeyGenerateResponse)
+async def elgamal_generate_keys_api():
+    """生成ElGamal密钥对"""
     try:
-        elgamal = ElGamalEncryption(512)  # 降低位长度以提高性能
+        elgamal = ElGamalEncryption(2048)  # 使用2048位长度以提高安全性
         public_key, private_key = elgamal.generate_keys()
-        logger.info('ElGamal 密钥生成成功')
-        return JSONResponse(content={
-            'public_key': public_key,
-            'private_key': private_key
-        })
+        return {"public_key": public_key, "private_key": private_key}
     except Exception as e:
-        logger.error(f'ElGamal 密钥生成失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+        logger.error(f"ElGamal 密钥生成失败: {e}")
+        raise HTTPException(status_code=500, detail=f"ElGamal 密钥生成失败: {str(e)}")
 
-@router.post('/rsa/encrypt')
-def rsa_encrypt(request: EncryptRequest):
+@router.post('/ecc/generate', response_model=KeyGenerateResponse)
+async def ecc_generate_keys_api():
+    """生成ECC密钥对"""
     try:
-        rsa = RSAEncryption(2048)
-        ciphertext = rsa.encrypt(request.plaintext, request.public_key)
-        return JSONResponse(content={'ciphertext': ciphertext})
+        ecc = ECCEncryption()  # 使用默认的P-256曲线
+        public_key, private_key = ecc.generate_keys()
+        return {"public_key": public_key, "private_key": private_key}
     except Exception as e:
-        logger.error(f'RSA 加密失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+        logger.error(f"ECC 密钥生成失败: {e}")
+        raise HTTPException(status_code=500, detail=f"ECC 密钥生成失败: {str(e)}")
 
-@router.post('/rsa/decrypt')
-def rsa_decrypt(request: DecryptRequest):
+@router.post('/rsa/encrypt', response_model=EncryptResponse)
+async def rsa_encrypt_api(req: EncryptRequest):
+    """RSA加密"""
     try:
-        rsa = RSAEncryption(2048)
-        plaintext = rsa.decrypt(request.ciphertext, request.private_key)
-        return JSONResponse(content={'plaintext': plaintext})
+        rsa = RSAEncryption()
+        ciphertext = rsa.encrypt(req.plaintext, req.public_key)
+        return {"ciphertext": ciphertext}
     except Exception as e:
-        logger.error(f'RSA 解密失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+        logger.error(f"RSA 加密失败: {e}")
+        raise HTTPException(status_code=500, detail=f"RSA 加密失败: {str(e)}")
 
-@router.get('/rsa/performance')
-def rsa_performance():
+@router.post('/rsa/decrypt', response_model=DecryptResponse)
+async def rsa_decrypt_api(req: DecryptRequest):
+    """RSA解密"""
     try:
-        rsa = RSAEncryption(2048)
-        results = rsa.performance_test()
-        return JSONResponse(content=results)
+        rsa = RSAEncryption()
+        plaintext = rsa.decrypt(req.ciphertext, req.private_key)
+        return {"plaintext": plaintext}
     except Exception as e:
-        logger.error(f'RSA 性能测试失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+        logger.error(f"RSA 解密失败: {e}")
+        raise HTTPException(status_code=500, detail=f"RSA 解密失败: {str(e)}")
 
-@router.post('/performance/rsa')
-def rsa_performance_test(request: PerformanceTestRequest):
+@router.post('/elgamal/encrypt', response_model=EncryptResponse)
+async def elgamal_encrypt_api(req: EncryptRequest):
+    """ElGamal加密"""
     try:
-        rsa = RSAEncryption(2048)
-        results = rsa.performance_test(message_size=request.message_size, iterations=request.iterations)
-        return JSONResponse(content=results)
+        elgamal = ElGamalEncryption()
+        ciphertext = elgamal.encrypt(req.plaintext, req.public_key)
+        return {"ciphertext": ciphertext}
     except Exception as e:
-        logger.error(f'RSA 性能测试失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+        logger.error(f"ElGamal 加密失败: {e}")
+        raise HTTPException(status_code=500, detail=f"ElGamal 加密失败: {str(e)}")
 
-@router.post('/elgamal/encrypt')
-def elgamal_encrypt(request: EncryptRequest):
+@router.post('/elgamal/decrypt', response_model=DecryptResponse)
+async def elgamal_decrypt_api(req: DecryptRequest):
+    """ElGamal解密"""
     try:
-        elgamal = ElGamalEncryption(512)  # 降低位长度以提高性能
-        ciphertext = elgamal.encrypt(request.plaintext, request.public_key)
-        return JSONResponse(content={'ciphertext': ciphertext})
+        elgamal = ElGamalEncryption()
+        plaintext = elgamal.decrypt(req.ciphertext, req.private_key)
+        return {"plaintext": plaintext}
     except Exception as e:
-        logger.error(f'ElGamal 加密失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+        logger.error(f"ElGamal 解密失败: {e}")
+        raise HTTPException(status_code=500, detail=f"ElGamal 解密失败: {str(e)}")
 
-@router.post('/elgamal/decrypt')
-def elgamal_decrypt(request: DecryptRequest):
-    try:
-        elgamal = ElGamalEncryption(512)  # 降低位长度以提高性能
-        plaintext = elgamal.decrypt(request.ciphertext, request.private_key)
-        return JSONResponse(content={'plaintext': plaintext})
-    except Exception as e:
-        logger.error(f'ElGamal 解密失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
-
-@router.get('/elgamal/performance')
-def elgamal_performance():
-    try:
-        elgamal = ElGamalEncryption(512)  # 降低位长度以提高性能
-        results = elgamal.performance_test()
-        return JSONResponse(content=results)
-    except Exception as e:
-        logger.error(f'ElGamal 性能测试失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
-
-@router.post('/performance/elgamal')
-def elgamal_performance_test(request: PerformanceTestRequest):
-    try:
-        elgamal = ElGamalEncryption(512)  # 降低位长度以提高性能
-        results = elgamal.performance_test(message_size=request.message_size)
-        return JSONResponse(content=results)
-    except Exception as e:
-        logger.error(f'ElGamal 性能测试失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
-
-@router.post('/ecc/encrypt')
-def ecc_encrypt(request: EncryptRequest):
+@router.post('/ecc/encrypt', response_model=EncryptResponse)
+async def ecc_encrypt_api(req: EncryptRequest):
+    """ECC加密"""
     try:
         ecc = ECCEncryption()
-        ciphertext = ecc.encrypt(request.plaintext, request.public_key)
-        return JSONResponse(content={'ciphertext': ciphertext})
+        ciphertext = ecc.encrypt(req.plaintext, req.public_key)
+        return {"ciphertext": ciphertext}
     except Exception as e:
-        logger.error(f'ECC 加密失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+        logger.error(f"ECC 加密失败: {e}")
+        raise HTTPException(status_code=500, detail=f"ECC 加密失败: {str(e)}")
 
-@router.post('/ecc/decrypt')
-def ecc_decrypt(request: DecryptRequest):
+@router.post('/ecc/decrypt', response_model=DecryptResponse)
+async def ecc_decrypt_api(req: DecryptRequest):
+    """ECC解密"""
     try:
         ecc = ECCEncryption()
-        plaintext = ecc.decrypt(request.ciphertext, request.private_key)
-        return JSONResponse(content={'plaintext': plaintext})
+        plaintext = ecc.decrypt(req.ciphertext, req.private_key)
+        return {"plaintext": plaintext}
     except Exception as e:
-        logger.error(f'ECC 解密失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
+        logger.error(f"ECC 解密失败: {e}")
+        raise HTTPException(status_code=500, detail=f"ECC 解密失败: {str(e)}")
 
-@router.get('/ecc/performance')
-def ecc_performance():
+@router.get('/ecc/performance', response_model=PerformanceResponse)
+async def ecc_performance_api():
+    """ECC性能测试"""
     try:
         ecc = ECCEncryption()
         results = ecc.performance_test()
@@ -311,44 +304,8 @@ def ecc_performance():
         logger.error(f'ECC 性能测试失败: {e}')
         return JSONResponse(content={'error': str(e)}, status_code=500)
 
-@router.post('/performance/ecc')
-def ecc_performance_test(request: PerformanceTestRequest):
-    try:
-        # 默认使用SECP256R1曲线
-        ecc = ECCEncryption()
-        results = ecc.performance_test(message_size=request.message_size, iterations=request.iterations)
-        return JSONResponse(content=results)
-    except Exception as e:
-        logger.error(f'ECC 性能测试失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
-
-@router.post('/performance/compare')
-def compare_performance(request: PerformanceTestRequest):
-    try:
-        # 运行三种算法的性能测试
-        rsa = RSAEncryption(2048)
-        elgamal = ElGamalEncryption(512)  # 降低位长度以提高性能
-        ecc = ECCEncryption()
-        
-        rsa_results = rsa.performance_test(message_size=request.message_size, iterations=request.iterations)
-        elgamal_results = elgamal.performance_test(message_size=request.message_size)
-        ecc_results = ecc.performance_test(message_size=request.message_size, iterations=request.iterations)
-        
-        # 返回比较结果
-        return JSONResponse(content={
-            'rsa': rsa_results,
-            'elgamal': elgamal_results,
-            'ecc': ecc_results,
-            'message_size': request.message_size,
-            'iterations': request.iterations
-        })
-    except Exception as e:
-        logger.error(f'性能比较测试失败: {e}')
-        return JSONResponse(content={'error': str(e)}, status_code=500)
-
-# 添加带曲线选择的ECC性能测试API
-@router.post('/performance/ecc/{curve_name}')
-def ecc_performance_test_with_curve(curve_name: str, request: PerformanceTestRequest):
+@router.post('/performance/ecc/{curve_name}', response_model=PerformanceResponse)
+async def ecc_performance_test_with_curve(curve_name: str, request: PerformanceTestRequest):
     try:
         # 根据曲线名称选择相应的曲线
         curve = None
@@ -375,6 +332,68 @@ def ecc_performance_test_with_curve(curve_name: str, request: PerformanceTestReq
         
         # 使用选定的曲线创建ECC对象
         ecc = ECCEncryption(curve=curve)
+        results = ecc.performance_test(message_size=request.message_size, iterations=request.iterations)
+        return JSONResponse(content=results)
+    except Exception as e:
+        logger.error(f'ECC 性能测试失败: {e}')
+        return JSONResponse(content={'error': str(e)}, status_code=500)
+
+@router.post('/performance/compare', response_model=PerformanceResponse)
+async def compare_performance(request: PerformanceTestRequest):
+    try:
+        # 运行三种算法的性能测试
+        rsa = RSAEncryption(2048)
+        elgamal = ElGamalEncryption(2048)  # 使用2048位长度以提高安全性
+        ecc = ECCEncryption()
+        
+        rsa_results = rsa.performance_test(message_size=request.message_size, iterations=request.iterations)
+        elgamal_results = elgamal.performance_test(message_size=request.message_size)
+        ecc_results = ecc.performance_test(message_size=request.message_size, iterations=request.iterations)
+        
+        # 返回比较结果
+        return JSONResponse(content={
+            'rsa': rsa_results,
+            'elgamal': elgamal_results,
+            'ecc': ecc_results,
+            'message_size': request.message_size,
+            'iterations': request.iterations
+        })
+    except Exception as e:
+        logger.error(f'性能比较测试失败: {e}')
+        return JSONResponse(content={'error': str(e)}, status_code=500)
+
+@router.post('/performance/rsa', response_model=PerformanceResponse)
+async def rsa_performance_test(request: PerformanceTestRequest):
+    try:
+        # 创建RSA对象并运行性能测试
+        rsa = RSAEncryption(2048)
+        results = rsa.performance_test(message_size=request.message_size, iterations=request.iterations)
+        return JSONResponse(content=results)
+    except Exception as e:
+        logger.error(f'RSA 性能测试失败: {e}')
+        return JSONResponse(content={'error': str(e)}, status_code=500)
+
+@router.post('/performance/elgamal', response_model=PerformanceResponse)
+async def elgamal_performance_test(request: PerformanceTestRequest):
+    try:
+        # 创建ElGamal对象并运行性能测试
+        elgamal = ElGamalEncryption(2048)  # 使用2048位长度以提高安全性
+        results = elgamal.performance_test(message_size=request.message_size)
+        
+        # 添加密钥长度和安全级别信息
+        results["bit_length"] = 2048
+        results["security_level"] = "中等（适合一般应用）"
+        
+        return JSONResponse(content=results)
+    except Exception as e:
+        logger.error(f'ElGamal 性能测试失败: {e}')
+        return JSONResponse(content={'error': str(e)}, status_code=500)
+
+@router.post('/performance/ecc', response_model=PerformanceResponse)
+async def ecc_performance_test(request: PerformanceTestRequest):
+    try:
+        # 创建ECC对象并运行性能测试
+        ecc = ECCEncryption()  # 使用默认曲线
         results = ecc.performance_test(message_size=request.message_size, iterations=request.iterations)
         return JSONResponse(content=results)
     except Exception as e:

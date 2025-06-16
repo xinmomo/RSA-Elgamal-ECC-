@@ -328,22 +328,27 @@
         async function rsaPerformanceTest() {
             try {
                 document.getElementById('rsaPerformance').innerText = "测试中...";
-                const response = await fetch('/api/encryption/rsa/performance');
+                const response = await fetch('/api/encryption/performance/rsa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message_size: 100, iterations: 100 })
+                });
                 const data = await response.json();
                 if (data.error) {
                     showResult('rsaPerformance', data.error, true);
                 } else {
                     // 显示更详细的性能测试结果
                     const formattedResults = {
-                        "密钥生成时间(毫秒)": (data.key_generation_time * 1000).toFixed(2),
-                        "加密时间(毫秒)": (data.encryption_time * 1000).toFixed(2),
-                        "解密时间(毫秒)": (data.decryption_time * 1000).toFixed(2),
-                        "签名时间(毫秒)": (data.signing_time * 1000).toFixed(2),
-                        "验证时间(毫秒)": (data.verification_time * 1000).toFixed(2),
-                        "密文大小(字节)": data.ciphertext_size,
-                        "签名大小(字节)": data.signature_size,
-                        "扩展因子": data.expansion_factor.toFixed(2),
-                        "安全级别": data.security_level
+                        "密钥生成时间(毫秒)": data.key_generation_time && !isNaN(data.key_generation_time) ? 
+                            (data.key_generation_time * 1000).toFixed(2) : "未知",
+                        "加密时间(毫秒)": data.encryption_time && !isNaN(data.encryption_time) ? 
+                            (data.encryption_time * 1000).toFixed(2) : "未知",
+                        "解密时间(毫秒)": data.decryption_time && !isNaN(data.decryption_time) ? 
+                            (data.decryption_time * 1000).toFixed(2) : "未知",
+                        "密文大小(字节)": data.ciphertext_size || "未知",
+                        "扩展因子": data.expansion_factor !== undefined && !isNaN(data.expansion_factor) ? 
+                            data.expansion_factor.toFixed(2) : "未知",
+                        "安全级别": data.security_level || "未知"
                     };
                     showResult('rsaPerformance', formattedResults);
                 }
@@ -433,18 +438,26 @@
         async function elGamalPerformanceTest() {
             try {
                 document.getElementById('elGamalPerformance').innerText = "测试中...";
-                const response = await fetch('/api/encryption/elgamal/performance');
+                const response = await fetch('/api/encryption/performance/elgamal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message_size: 100, iterations: 100 })
+                });
                 const data = await response.json();
                 if (data.error) {
                     showResult('elGamalPerformance', data.error, true);
                 } else {
                     // 显示更详细的性能测试结果
                     const formattedResults = {
-                        "密钥生成时间(毫秒)": (data.key_generation_time * 1000).toFixed(2),
-                        "加密时间(毫秒)": (data.encryption_time * 1000).toFixed(2),
-                        "解密时间(毫秒)": (data.decryption_time * 1000).toFixed(2),
-                        "密文大小(字节)": data.ciphertext_size,
-                        "扩展因子": data.expansion_factor.toFixed(2),
+                        "密钥生成时间(毫秒)": data.key_generation_time && !isNaN(data.key_generation_time) ? 
+                            (data.key_generation_time * 1000).toFixed(2) : "未知",
+                        "加密时间(毫秒)": data.encryption_time && !isNaN(data.encryption_time) ? 
+                            (data.encryption_time * 1000).toFixed(2) : "未知",
+                        "解密时间(毫秒)": data.decryption_time && !isNaN(data.decryption_time) ? 
+                            (data.decryption_time * 1000).toFixed(2) : "未知",
+                        "密文大小(字节)": data.ciphertext_size || "未知",
+                        "扩展因子": data.expansion_factor !== undefined && !isNaN(data.expansion_factor) ? 
+                            data.expansion_factor.toFixed(2) : "未知",
                         "位长度": data.bit_length || "未知"
                     };
                     showResult('elGamalPerformance', formattedResults);
@@ -458,7 +471,7 @@
         async function generateECCKeys() {
             try {
                 document.getElementById('eccKeys').innerText = "生成中...";
-                const response = await fetch('/api/encryption/ecc/generate_keys', { method: 'POST' });
+                const response = await fetch('/api/encryption/ecc/generate', { method: 'POST' });
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -535,23 +548,28 @@
         async function eccPerformanceTest() {
             try {
                 document.getElementById('eccPerformance').innerText = "测试中...";
-                const response = await fetch('/api/encryption/ecc/performance');
+                const response = await fetch('/api/encryption/performance/ecc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message_size: 100, iterations: 100 })
+                });
                 const data = await response.json();
                 if (data.error) {
                     showResult('eccPerformance', data.error, true);
                 } else {
                     // 显示更详细的性能测试结果
                     const formattedResults = {
-                        "密钥生成时间(毫秒)": (data.key_generation_time * 1000).toFixed(2),
-                        "加密时间(毫秒)": (data.encryption_time * 1000).toFixed(2),
-                        "解密时间(毫秒)": (data.decryption_time * 1000).toFixed(2),
-                        "签名时间(毫秒)": (data.signing_time * 1000).toFixed(2),
-                        "验证时间(毫秒)": (data.verification_time * 1000).toFixed(2),
-                        "密文大小(字节)": data.ciphertext_size,
-                        "签名大小(字节)": data.signature_size,
-                        "扩展因子": data.expansion_factor.toFixed(2),
-                        "曲线": data.curve_name,
-                        "安全级别": data.security_level
+                        "密钥生成时间(毫秒)": data.key_generation_time && !isNaN(data.key_generation_time) ? 
+                            (data.key_generation_time * 1000).toFixed(2) : "未知",
+                        "加密时间(毫秒)": data.encryption_time && !isNaN(data.encryption_time) ? 
+                            (data.encryption_time * 1000).toFixed(2) : "未知",
+                        "解密时间(毫秒)": data.decryption_time && !isNaN(data.decryption_time) ? 
+                            (data.decryption_time * 1000).toFixed(2) : "未知",
+                        "密文大小(字节)": data.ciphertext_size || "未知",
+                        "扩展因子": data.expansion_factor !== undefined && !isNaN(data.expansion_factor) ? 
+                            data.expansion_factor.toFixed(2) : "未知",
+                        "曲线": data.curve_name || "未知",
+                        "安全级别": data.security_level || "未知"
                     };
                     showResult('eccPerformance', formattedResults);
                 }

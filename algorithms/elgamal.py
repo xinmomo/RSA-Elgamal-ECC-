@@ -62,7 +62,7 @@ def find_primitive_root(p, max_attempts=100):
 
 
 class ElGamalEncryption:
-    def __init__(self, bit_length=512):  # 降低默认位长度以提高性能
+    def __init__(self, bit_length=2048):  # 将默认位长度改为2048位
         self.bit_length = bit_length
         self.public_key = None
         self.private_key = None
@@ -259,11 +259,20 @@ class ElGamalEncryption:
         results["public_key_size"] = len(public_key)
         results["private_key_size"] = len(private_key)
         
+        # 添加位长度和安全级别
+        results["bit_length"] = self.bit_length
+        if self.bit_length >= 2048:
+            results["security_level"] = "中等（适合一般应用）"
+        elif self.bit_length >= 1024:
+            results["security_level"] = "较低（仅适合短期安全）"
+        else:
+            results["security_level"] = "低（不推荐用于敏感数据）"
+        
         return results
 
 
 if __name__ == '__main__':
-    elgamal = ElGamalEncryption(bit_length=512)  # 使用较小的位长度进行测试
+    elgamal = ElGamalEncryption(bit_length=2048)  # 使用较小的位长度进行测试
     pub, priv = elgamal.generate_keys()
     message = "Hello, ElGamal!"
     ciphertext = elgamal.encrypt(message, pub)

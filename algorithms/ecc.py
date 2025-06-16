@@ -35,6 +35,15 @@ class ECCEncryption:
             'BRAINPOOLP256R1': 256,
             'BRAINPOOLP384R1': 384,
             'BRAINPOOLP512R1': 512,
+            # 添加小写版本
+            'secp256r1': 256,
+            'secp384r1': 384,
+            'secp521r1': 521,
+            'secp224r1': 224,
+            'secp192r1': 192,
+            'brainpoolp256r1': 256,
+            'brainpoolp384r1': 384,
+            'brainpoolp512r1': 512,
         }
         
         # 曲线安全性映射表 - 包含更详细的安全评估
@@ -103,6 +112,79 @@ class ECCEncryption:
                 'equivalent_rsa': 7680
             },
             'BRAINPOOLP512R1': {
+                'security_bits': 256,
+                'level': "非常高",
+                'nist_compliance': False,
+                'description': "Brainpool 512位曲线，提供256位安全强度，非NIST标准",
+                'quantum_resistance': "低",
+                'recommended_use': "适合需要非NIST标准的最高安全应用",
+                'equivalent_rsa': 15360
+            },
+            # 添加小写版本
+            'secp256r1': {
+                'security_bits': 128,
+                'level': "高",
+                'nist_compliance': True,
+                'description': "NIST P-256曲线，提供128位安全强度，适合一般应用和TLS",
+                'quantum_resistance': "低",
+                'recommended_use': "适合一般商业应用、Web安全、移动应用",
+                'equivalent_rsa': 3072
+            },
+            'secp384r1': {
+                'security_bits': 192,
+                'level': "很高",
+                'nist_compliance': True,
+                'description': "NIST P-384曲线，提供192位安全强度，适合敏感数据",
+                'quantum_resistance': "低",
+                'recommended_use': "适合政府和金融机构的敏感数据",
+                'equivalent_rsa': 7680
+            },
+            'secp521r1': {
+                'security_bits': 256,
+                'level': "非常高",
+                'nist_compliance': True,
+                'description': "NIST P-521曲线，提供256位安全强度，适合高安全需求",
+                'quantum_resistance': "低",
+                'recommended_use': "适合最高级别的安全需求，如军事和国家安全应用",
+                'equivalent_rsa': 15360
+            },
+            'secp224r1': {
+                'security_bits': 112,
+                'level': "中等",
+                'nist_compliance': True,
+                'description': "NIST P-224曲线，提供112位安全强度，适合低安全需求",
+                'quantum_resistance': "低",
+                'recommended_use': "适合资源受限设备，但不推荐用于新系统",
+                'equivalent_rsa': 2048
+            },
+            'secp192r1': {
+                'security_bits': 96,
+                'level': "较低",
+                'nist_compliance': True,
+                'description': "NIST P-192曲线，提供96位安全强度，已不推荐使用",
+                'quantum_resistance': "低",
+                'recommended_use': "仅用于兼容旧系统，不推荐用于新应用",
+                'equivalent_rsa': 1536
+            },
+            'brainpoolp256r1': {
+                'security_bits': 128,
+                'level': "高",
+                'nist_compliance': False,
+                'description': "Brainpool 256位曲线，提供128位安全强度，非NIST标准",
+                'quantum_resistance': "低",
+                'recommended_use': "适合需要非NIST标准的应用",
+                'equivalent_rsa': 3072
+            },
+            'brainpoolp384r1': {
+                'security_bits': 192,
+                'level': "很高",
+                'nist_compliance': False,
+                'description': "Brainpool 384位曲线，提供192位安全强度，非NIST标准",
+                'quantum_resistance': "低",
+                'recommended_use': "适合需要非NIST标准的高安全应用",
+                'equivalent_rsa': 7680
+            },
+            'brainpoolp512r1': {
                 'security_bits': 256,
                 'level': "非常高",
                 'nist_compliance': False,
@@ -261,7 +343,7 @@ class ECCEncryption:
         """使用 ECC 私钥解密消息
         
         Args:
-            ciphertext_b64: Base64 编码的加密数据
+            ciphertext_b64: Base64 编码的密文
             private_key_pem: PEM 格式的私钥
             
         Returns:
@@ -342,68 +424,6 @@ class ECCEncryption:
         
         return plaintext.decode('utf-8')
 
-    def sign(self, message, private_key_pem):
-        """使用 ECC 私钥签名消息
-        
-        Args:
-            message: 要签名的消息
-            private_key_pem: PEM 格式的私钥
-            
-        Returns:
-            str: Base64 编码的签名
-        """
-        try:
-            # 加载私钥
-            private_key = serialization.load_pem_private_key(
-                private_key_pem.encode('utf-8'),
-                password=None,
-                backend=default_backend()
-            )
-            
-            # 签名
-            signature = private_key.sign(
-                message.encode('utf-8'),
-                ec.ECDSA(hashes.SHA256())
-            )
-            
-            return base64.b64encode(signature).decode('utf-8')
-        except Exception as e:
-            logger.error(f"ECC 签名失败: {e}")
-            raise
-
-    def verify(self, message, signature, public_key_pem):
-        """使用 ECC 公钥验证签名
-        
-        Args:
-            message: 原始消息
-            signature: Base64 编码的签名
-            public_key_pem: PEM 格式的公钥
-            
-        Returns:
-            bool: 签名是否有效
-        """
-        try:
-            # 加载公钥
-            public_key = serialization.load_pem_public_key(
-                public_key_pem.encode('utf-8'),
-                backend=default_backend()
-            )
-            
-            # 解码签名
-            signature_bytes = base64.b64decode(signature)
-            
-            # 验证签名
-            public_key.verify(
-                signature_bytes,
-                message.encode('utf-8'),
-                ec.ECDSA(hashes.SHA256())
-            )
-            
-            return True
-        except Exception as e:
-            logger.error(f"ECC 验证签名失败: {e}")
-            return False
-
     def performance_test(self, message_size=100, iterations=5):
         """性能测试
         
@@ -441,23 +461,7 @@ class ECCEncryption:
             decrypt_times.append(time.time() - start_time)
         results["decryption_time"] = sum(decrypt_times) / iterations
         
-        # 测试签名性能
-        sign_times = []
-        for _ in range(iterations):
-            start_time = time.time()
-            signature = self.sign(test_message, private_key)
-            sign_times.append(time.time() - start_time)
-        results["signing_time"] = sum(sign_times) / iterations
-        
-        # 测试验证性能
-        verify_times = []
-        for _ in range(iterations):
-            start_time = time.time()
-            self.verify(test_message, signature, public_key)
-            verify_times.append(time.time() - start_time)
-        results["verification_time"] = sum(verify_times) / iterations
-        
-        # 测量密文长度和签名长度
+        # 测量密文长度
         if isinstance(ciphertext, str) and ciphertext.startswith("{"):
             # 处理分块加密的情况
             try:
@@ -480,7 +484,6 @@ class ECCEncryption:
             # 不是JSON格式，使用原始大小
             results["ciphertext_size"] = len(ciphertext)
         
-        results["signature_size"] = len(base64.b64decode(signature))
         results["expansion_factor"] = results["ciphertext_size"] / message_size
         
         # 密钥大小
@@ -509,11 +512,6 @@ if __name__ == '__main__':
     decrypted = ecc.decrypt(ciphertext, priv)
     print(f"Original: {message}")
     print(f"Decrypted: {decrypted}")
-    
-    # 测试签名和验证
-    signature = ecc.sign(message, priv)
-    is_valid = ecc.verify(message, signature, pub)
-    print(f"Signature valid: {is_valid}")
     
     # 性能测试
     results = ecc.performance_test()

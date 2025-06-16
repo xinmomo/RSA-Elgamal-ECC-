@@ -164,7 +164,7 @@
         }
     </style>
     <!-- 引入Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/Chart.js/3.7.1/chart.js"></script>
 </head>
 <body>
     <h1>公钥密码算法性能比较</h1>
@@ -177,7 +177,7 @@
         </div>
         <div class="form-group">
             <label for="iterations">测试迭代次数:</label>
-            <input type="number" id="iterations" value="5" min="1" max="20">
+            <input type="number" id="iterations" value="100" min="1" max="100">
         </div>
         <button class="btn" onclick="runPerformanceTests()">运行性能测试</button>
         <button class="btn" onclick="window.location.href='/'">返回主页</button>
@@ -317,9 +317,14 @@
             document.getElementById(tabId).classList.add('active');
             
             // 找到对应的标签按钮并设置为活动状态
-            Array.from(document.querySelectorAll('.tab')).find(tab => 
+            const activeTab = Array.from(document.querySelectorAll('.tab')).find(tab => 
                 tab.textContent.toLowerCase().includes(tabId.split('-')[0])
-            ).classList.add('active');
+            );
+            
+            // 添加空值检查
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
         }
         
         // 格式化时间（毫秒）
@@ -382,7 +387,36 @@
                 function formatDataDisplay(data) {
                     // 创建一个美化的数据显示，去掉引号和大括号
                     let result = '';
+                    
+                    // 英文键名到中文键名的映射
+                    const keyNameMap = {
+                        'key_generation_time': '密钥生成时间',
+                        'encryption_time': '加密时间',
+                        'decryption_time': '解密时间',
+                        'ciphertext_size': '密文大小',
+                        'expansion_factor': '扩展因子',
+                        'public_key_size': '公钥大小',
+                        'private_key_size': '私钥大小',
+                        'bit_length': '位长度',
+                        'security_level': '安全级别',
+                        'curve_name': '曲线名称',
+                        'security_bits': '安全位数',
+                        'security_description': '安全性描述',
+                        'nist_compliance': 'NIST合规性',
+                        'quantum_resistance': '量子抵抗力',
+                        'recommended_use': '推荐用途',
+                        'equivalent_rsa_bits': '等效RSA位数'
+                    };
+                    
                     for (const [key, value] of Object.entries(data)) {
+                        // 跳过签名相关的数据项
+                        if (key === 'signing_time' || key === 'verification_time' || key === 'signature_size') {
+                            continue;
+                        }
+                        
+                        // 使用中文键名，如果没有对应的中文键名，则使用原始键名
+                        const displayKey = keyNameMap[key] || key;
+                        
                         let displayValue = value;
                         if (typeof value === 'number') {
                             if (key.includes('time')) {
@@ -392,8 +426,13 @@
                             } else if (key.includes('factor')) {
                                 displayValue = (value * 100).toFixed(2) + '%';
                             }
+                        } else if (value === true) {
+                            displayValue = '是';
+                        } else if (value === false) {
+                            displayValue = '否';
                         }
-                        result += `${key}: ${displayValue}\n`;
+                        
+                        result += `${displayKey}: ${displayValue}\n`;
                     }
                     return result;
                 }
@@ -420,28 +459,28 @@
         function generateTimeChart(rsaData, elgamalData, eccData) {
             const ctx = document.getElementById('timeChart').getContext('2d');
             
+            // 销毁已存在的图表实例
+            const existingChart = Chart.getChart(ctx.canvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
             // 准备数据
-            const labels = ['密钥生成', '加密', '解密', '签名', '验证'];
+            const labels = ['密钥生成', '加密', '解密'];
             const rsaValues = [
                 rsaData.key_generation_time * 1000,
                 rsaData.encryption_time * 1000,
-                rsaData.decryption_time * 1000,
-                rsaData.signing_time * 1000,
-                rsaData.verification_time * 1000
+                rsaData.decryption_time * 1000
             ];
             const elgamalValues = [
                 elgamalData.key_generation_time * 1000,
                 elgamalData.encryption_time * 1000,
-                elgamalData.decryption_time * 1000,
-                0, // ElGamal没有内置签名功能
-                0  // ElGamal没有内置验证功能
+                elgamalData.decryption_time * 1000
             ];
             const eccValues = [
                 eccData.key_generation_time * 1000,
                 eccData.encryption_time * 1000,
-                eccData.decryption_time * 1000,
-                eccData.signing_time * 1000,
-                eccData.verification_time * 1000
+                eccData.decryption_time * 1000
             ];
             
             // 创建图表
@@ -530,30 +569,6 @@
             decryptTimes.sort((a, b) => a.time - b.time);
             summary += `解密速度: ${decryptTimes[0].name} 最快 (${formatTime(decryptTimes[0].time)}), ${decryptTimes[2].name} 最慢 (${formatTime(decryptTimes[2].time)})。\n`;
             
-            // 签名比较
-            if (rsaData.signing_time && eccData.signing_time) {
-                const signTimes = [
-                    { name: 'RSA', time: rsaData.signing_time },
-                    { name: 'ECC', time: eccData.signing_time }
-                ];
-                signTimes.sort((a, b) => a.time - b.time);
-                summary += `签名速度: ${signTimes[0].name} 最快 (${formatTime(signTimes[0].time)}), ${signTimes[1].name} 最慢 (${formatTime(signTimes[1].time)})。\n`;
-            } else {
-                summary += `签名速度: RSA (${formatTime(rsaData.signing_time)}), ECC (${formatTime(eccData.signing_time)})。\n`;
-            }
-            
-            // 验证比较
-            if (rsaData.verification_time && eccData.verification_time) {
-                const verifyTimes = [
-                    { name: 'RSA', time: rsaData.verification_time },
-                    { name: 'ECC', time: eccData.verification_time }
-                ];
-                verifyTimes.sort((a, b) => a.time - b.time);
-                summary += `验证速度: ${verifyTimes[0].name} 最快 (${formatTime(verifyTimes[0].time)}), ${verifyTimes[1].name} 最慢 (${formatTime(verifyTimes[1].time)})。\n`;
-            } else {
-                summary += `验证速度: RSA (${formatTime(rsaData.verification_time)}), ECC (${formatTime(eccData.verification_time)})。\n`;
-            }
-            
             document.getElementById('time-summary').textContent = summary;
         }
         
@@ -561,27 +576,30 @@
         function generateSizeChart(rsaData, elgamalData, eccData) {
             const ctx = document.getElementById('sizeChart').getContext('2d');
             
+            // 销毁已存在的图表实例
+            const existingChart = Chart.getChart(ctx.canvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
             // 准备数据
-            const labels = ['公钥大小', '私钥大小', '密文大小', '签名大小', '扩展因子'];
+            const labels = ['公钥大小', '私钥大小', '密文大小', '扩展因子'];
             const rsaValues = [
                 rsaData.public_key_size,
                 rsaData.private_key_size,
                 rsaData.ciphertext_size,
-                rsaData.signature_size,
                 rsaData.expansion_factor * 100 // 转换为百分比
             ];
             const elgamalValues = [
                 elgamalData.public_key_size,
                 elgamalData.private_key_size,
                 elgamalData.ciphertext_size,
-                0, // ElGamal没有内置签名功能
                 elgamalData.expansion_factor * 100 // 转换为百分比
             ];
             const eccValues = [
                 eccData.public_key_size,
                 eccData.private_key_size,
                 eccData.ciphertext_size,
-                eccData.signature_size,
                 eccData.expansion_factor * 100 // 转换为百分比
             ];
             
@@ -676,9 +694,6 @@
             ciphertextSizes.sort((a, b) => a.size - b.size);
             summary += `密文大小: ${ciphertextSizes[0].name} 最小 (${formatSize(ciphertextSizes[0].size)}), ${ciphertextSizes[2].name} 最大 (${formatSize(ciphertextSizes[2].size)})。\n`;
             
-            // 签名大小比较
-            summary += `签名大小: RSA (${formatSize(rsaData.signature_size)}), ECC (${formatSize(eccData.signature_size)})。\n`;
-            
             // 扩展因子比较
             const expansionFactors = [
                 { name: 'RSA', factor: rsaData.expansion_factor },
@@ -710,8 +725,8 @@
             const elgamalRow = document.createElement('tr');
             elgamalRow.innerHTML = `
                 <td>ElGamal</td>
-                <td>${elgamalData.bit_length || '未知'} 位</td>
-                <td>${elgamalData.security_level || '中等'}</td>
+                <td>${elgamalData.bit_length || '2048'} 位</td>
+                <td>${elgamalData.security_level || '中等（适合一般应用）'}</td>
                 <td>加密（不适用于签名）</td>
             `;
             tableBody.appendChild(elgamalRow);

@@ -211,59 +211,6 @@ class RSAEncryption:
             logger.error(f"RSA 解密失败: {e}")
             raise
 
-    def sign(self, message, private_key_pem):
-        """RSA签名"""
-        try:
-            # 加载私钥
-            private_key = serialization.load_pem_private_key(
-                private_key_pem.encode('utf-8'),
-                password=None,
-                backend=default_backend()
-            )
-            
-            # 签名
-            signature = private_key.sign(
-                message.encode('utf-8'),
-                padding.PSS(
-                    mgf=padding.MGF1(hashes.SHA256()),
-                    salt_length=padding.PSS.MAX_LENGTH
-                ),
-                hashes.SHA256()
-            )
-            
-            return base64.b64encode(signature).decode('utf-8')
-        except Exception as e:
-            logger.error(f"RSA 签名失败: {e}")
-            raise
-
-    def verify(self, message, signature, public_key_pem):
-        """RSA验证签名"""
-        try:
-            # 加载公钥
-            public_key = serialization.load_pem_public_key(
-                public_key_pem.encode('utf-8'),
-                backend=default_backend()
-            )
-            
-            # 解码签名
-            signature_bytes = base64.b64decode(signature)
-            
-            # 验证签名
-            public_key.verify(
-                signature_bytes,
-                message.encode('utf-8'),
-                padding.PSS(
-                    mgf=padding.MGF1(hashes.SHA256()),
-                    salt_length=padding.PSS.MAX_LENGTH
-                ),
-                hashes.SHA256()
-            )
-            
-            return True
-        except Exception as e:
-            logger.error(f"RSA 验证签名失败: {e}")
-            return False
-
     def performance_test(self, message_size=100, iterations=5):
         """性能测试
         
@@ -301,23 +248,7 @@ class RSAEncryption:
             decrypt_times.append(time.time() - start_time)
         results["decryption_time"] = sum(decrypt_times) / iterations
         
-        # 测试签名性能
-        sign_times = []
-        for _ in range(iterations):
-            start_time = time.time()
-            signature = self.sign(test_message, private_key)
-            sign_times.append(time.time() - start_time)
-        results["signing_time"] = sum(sign_times) / iterations
-        
-        # 测试验证性能
-        verify_times = []
-        for _ in range(iterations):
-            start_time = time.time()
-            self.verify(test_message, signature, public_key)
-            verify_times.append(time.time() - start_time)
-        results["verification_time"] = sum(verify_times) / iterations
-        
-        # 测量密文长度和签名长度
+        # 测量密文长度
         if isinstance(ciphertext, str) and ciphertext.startswith("{"):
             # 处理分块加密的情况
             ciphertext_data = json.loads(ciphertext)
@@ -327,7 +258,6 @@ class RSAEncryption:
         else:
             results["ciphertext_size"] = len(base64.b64decode(ciphertext))
         
-        results["signature_size"] = len(base64.b64decode(signature))
         results["expansion_factor"] = results["ciphertext_size"] / message_size
         
         # 密钥大小
@@ -355,11 +285,6 @@ if __name__ == '__main__':
     decrypted = rsa.decrypt(ciphertext, priv)
     print(f"Original: {message}")
     print(f"Decrypted: {decrypted}")
-    
-    # 测试签名和验证
-    signature = rsa.sign(message, priv)
-    is_valid = rsa.verify(message, signature, pub)
-    print(f"Signature valid: {is_valid}")
     
     # 性能测试
     results = rsa.performance_test()

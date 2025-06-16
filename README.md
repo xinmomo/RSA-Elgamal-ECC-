@@ -1,138 +1,126 @@
 # 公钥密码算法交互系统
 
-这是一个基于FastAPI的公钥密码算法交互系统，支持RSA、ElGamal和ECC三种主流公钥密码算法的演示、比较和性能测试。
+本项目是一个基于FastAPI框架开发的公钥密码算法交互系统，支持RSA、ElGamal、ECC三种主流公钥密码算法的演示、比较和性能测试。系统提供了密钥生成、加解密功能，并通过Web界面和RESTful API对外提供服务，适合教学、实验和算法对比研究。
 
-## 功能特点
+## 系统功能
 
-- **多种算法支持**：实现了RSA、ElGamal和ECC三种公钥密码算法
-- **完整密码功能**：支持密钥生成、加密解密、数字签名和验证
-- **性能比较**：提供直观的图表展示各算法在时间和空间性能上的对比
-- **参数化测试**：可自定义消息大小和测试迭代次数
-- **分块加密**：支持大文本加密，自动分块处理
-- **可视化界面**：友好的Web界面，展示算法运行过程和结果
-- **ECC安全性评估**：支持多种ECC曲线，提供详细的安全性分析和比较
+- **三种经典公钥密码算法支持**
+  - RSA算法
+  - ElGamal算法
+  - ECC椭圆曲线算法
+- **密钥管理**
+  - 密钥对生成
+  - 公私钥显示与存储
+- **加密解密**
+  - 公钥加密
+  - 私钥解密
+  - 明文/密文处理
+- **性能测试与比较**
+  - 密钥生成时间
+  - 加密/解密速度
+  - 密文扩展因子
+  - 安全级别评估
+- **友好的Web界面**
+  - 交互式操作
+  - 实时结果显示
+  - 算法切换与比较
 
-## 系统架构
+## 环境要求
 
-- **前端**：HTML、JavaScript和Chart.js构建的交互界面
-- **后端**：FastAPI框架提供RESTful API
-- **算法实现**：Python实现的密码算法模块
+- Python 3.8 及以上
+- 依赖包:
+  - fastapi==0.111.0
+  - uvicorn==0.30.1
+  - pycryptodome==3.20.0
+  - python-multipart==0.0.9
+  - jinja2==3.1.2
+  - cryptography==41.0.5
+  - pydantic==2.4.2
 
-## 快速开始
+## 安装与运行
 
-### 环境要求
+1. **克隆项目**
+   ```bash
+   git clone <repository-url>
+   cd fastapi
+   ```
 
-- Python 3.8+
-- 依赖库：fastapi, uvicorn, pycryptodome, python-multipart
+2. **安装依赖**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### 安装步骤
+3. **启动服务**
+   ```bash
+   python main.py
+   ```
+   或者
+   ```bash
+   uvicorn main:app --reload
+   ```
 
-1. 克隆仓库
-```bash
-git clone <repository-url>
-cd fastapi
-```
+4. **访问系统**
+   - Web界面: 打开浏览器访问 [http://localhost:8000](http://localhost:8000)
+   - API文档: 打开浏览器访问 [http://localhost:8000/docs](http://localhost:8000/docs)
 
-2. 安装依赖
-```bash
-pip install -r requirements.txt
-```
+## API接口
 
-3. 启动服务器
-```bash
-uvicorn main:app --reload
-```
+系统提供以下RESTful API接口:
 
-4. 访问系统
-浏览器打开 http://localhost:8000
+### RSA算法
+- `POST /api/encryption/rsa/generate`: 生成RSA密钥对
+- `POST /api/encryption/rsa/encrypt`: RSA加密
+- `POST /api/encryption/rsa/decrypt`: RSA解密
+- `POST /api/encryption/performance/rsa`: RSA性能测试
 
-## 使用指南
+### ElGamal算法
+- `POST /api/encryption/elgamal/generate`: 生成ElGamal密钥对
+- `POST /api/encryption/elgamal/encrypt`: ElGamal加密
+- `POST /api/encryption/elgamal/decrypt`: ElGamal解密
+- `POST /api/encryption/performance/elgamal`: ElGamal性能测试
 
-### 基本加解密操作
+### ECC算法
+- `POST /api/encryption/ecc/generate`: 生成ECC密钥对
+- `POST /api/encryption/ecc/encrypt`: ECC加密
+- `POST /api/encryption/ecc/decrypt`: ECC解密
+- `POST /api/encryption/performance/ecc`: ECC性能测试
 
-1. 在主页选择算法类型（RSA、ElGamal或ECC）
-2. 生成密钥对
-3. 输入明文进行加密
-4. 使用私钥解密密文
-5. 可选择进行签名和验证操作
+## 项目结构
 
-### 性能测试
-
-1. 点击"性能比较"进入性能测试页面
-2. 设置测试参数（消息大小和迭代次数）
-3. 点击"运行性能测试"按钮
-4. 查看生成的性能比较图表和数据分析
-
-### ECC安全性评估
-
-1. 在性能比较页面，切换到"安全性比较"标签
-2. 点击ECC算法行，显示详细评估界面
-3. 从下拉菜单选择不同的ECC曲线
-4. 点击"查看安全性评估"按钮获取详细分析
-5. 查看曲线的安全强度、NIST合规性、量子抵抗能力等信息
-
-## 算法特性比较
-
-### 时间性能
-- **密钥生成**：ECC通常最快，ElGamal较慢
-- **加密速度**：RSA在小数据量时表现较好
-- **解密速度**：ECC通常优于RSA
-- **签名验证**：RSA和ECC各有优势
-
-### 空间性能
-- **密钥大小**：ECC密钥最小，相同安全级别下约为RSA的1/6
-- **密文扩展**：ElGamal通常有较大的密文扩展因子
-
-### 安全性
-- **ECC**：提供多种曲线选择，安全强度从96位到256位不等
-- **RSA**：广泛使用，成熟可靠，安全强度取决于密钥长度
-- **ElGamal**：基于离散对数问题，主要用于加密
-- **量子抵抗性**：所有三种算法对量子计算攻击的抵抗力均较弱
-
-## 支持的ECC曲线
-
-系统支持多种ECC曲线，包括：
-
-- **NIST标准曲线**：SECP256R1 (P-256)、SECP384R1 (P-384)、SECP521R1 (P-521)、SECP224R1 (P-224)、SECP192R1 (P-192)
-- **Brainpool曲线**：BRAINPOOLP256R1、BRAINPOOLP384R1、BRAINPOOLP512R1
-
-每种曲线提供不同级别的安全强度和性能特性，系统会提供详细的安全性评估和使用建议。
-
-## 开发说明
-
-### 项目结构
 ```
 fastapi/
-├── main.py                 # 主应用入口
-├── algorithms/             # 算法实现
-│   ├── rsa.py              # RSA算法实现
-│   ├── elgamal.py          # ElGamal算法实现
-│   └── ecc.py              # ECC算法实现
-├── routes/                 # API路由
-│   └── encryption.py       # 加密相关路由
-└── templates/              # 前端模板
-    ├── index.html          # 主页
-    └── performance.html    # 性能比较页面
+├── main.py                # FastAPI主入口
+├── requirements.txt       # 依赖包列表
+├── algorithms/            # 算法实现目录
+│   ├── __init__.py
+│   ├── rsa.py            # RSA算法实现
+│   ├── elgamal.py        # ElGamal算法实现
+│   └── ecc.py            # ECC算法实现
+├── routes/               # API路由目录
+│   └── encryption.py     # 加密算法API路由
+├── templates/            # HTML模板目录
+│   ├── index.html        # 主页模板
+│   └── performance.html  # 性能比较页面模板
+├── static/               # 静态资源目录
+└── tests/                # 测试代码目录
 ```
 
-### 扩展开发
+## 系统特点
 
-如需添加新的加密算法，请遵循以下步骤：
-1. 在`algorithms/`目录下创建新算法实现
-2. 在`routes/encryption.py`中添加相应的API路由
-3. 更新前端界面以支持新算法
-
-如需添加新的ECC曲线支持：
-1. 在`algorithms/ecc.py`中的曲线参数映射表和安全性映射表中添加新曲线
-2. 在`routes/encryption.py`中的曲线选择逻辑中添加新曲线支持
+1. **模块化设计**：算法实现与接口分离，便于扩展和维护
+2. **直观的Web界面**：提供用户友好的交互体验
+3. **完整的API文档**：自动生成的Swagger文档，便于集成和调用
+4. **性能测试功能**：支持不同算法的性能对比和分析
+5. **安全性考虑**：采用标准加密库实现，保证算法正确性
 
 ## 注意事项
 
-- 本系统仅用于教学和演示目的，不建议在生产环境中直接使用
-- ElGamal算法在密钥生成时可能需要较长时间，系统已添加超时机制
-- 大文本加密时会自动进行分块处理，可能影响性能测试结果
-- ECC安全性评估基于当前密码学研究，随着量子计算发展可能需要更新
+- 本系统仅用于教学、实验和算法对比研究，不建议直接用于生产环境
+- 密钥和敏感数据请妥善保管，避免泄露
+- 性能测试结果仅供参考，实际性能与硬件、参数设置等有关
 
-## 许可证
+## 参考资料
 
-[MIT License](LICENSE) 
+- [FastAPI官方文档](https://fastapi.tiangolo.com/)
+- [PyCryptodome文档](https://www.pycryptodome.org/)
+- [密码学原理与实践](https://www.amazon.com/Cryptography-Theory-Practice-Douglas-Stinson/dp/1138197017) 
